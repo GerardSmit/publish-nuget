@@ -1,7 +1,6 @@
 const os = require("os"),
     fs = require("fs"),
     path = require("path"),
-    https = require("https"),
     spawnSync = require("child_process").spawnSync
 
 class Action {
@@ -103,7 +102,7 @@ class Action {
             this._tagCommit(version)
     }
 
-    _checkForUpdate() {
+    async _checkForUpdate() {
         if (!this.packageName) {
             this.packageName = path.basename(this.projectFile).split(".").slice(0, -1).join(".")
         }
@@ -112,31 +111,17 @@ class Action {
 
         let url = `${this.nugetSource}/v3-flatcontainer/${this.packageName.toLowerCase()}/index.json`
         console.log(`Getting versions from ${url}`)
-        https.get(url, res => {
-            let body = ""
+        
+        const response = await fetch(url);
+        const existingVersions = await response.json();
 
-            if (res.statusCode == 404) {
-                console.log('404 response, assuming new package')
-                this._pushPackage(this.version, this.packageName)
-            }
-                
+        console.log(`Versions retrieved: ${existingVersions.versions}`)
 
-            if (res.statusCode == 200) {
-                res.setEncoding("utf8")
-                res.on("data", chunk => body += chunk)
-                res.on("end", () => {
-                    const existingVersions = JSON.parse(body)
-                    console.log(`Versions retrieved: ${existingVersions.versions}`)
-                    if (existingVersions.versions.indexOf(this.version) < 0)
-                        this._pushPackage(this.version, this.packageName)
-                })
-            }
-        }).on("error", e => {
-            this._printErrorAndExit(`error: ${e.message}`)
-        })
+        if (existingVersions.versions.indexOf(this.version) < 0)
+            this._pushPackage(this.version, this.packageName)
     }
 
-    run() {
+    async run() {
         if (!this.projectFile || !fs.existsSync(this.projectFile))
             this._printErrorAndExit("project file not found")
 
@@ -160,17 +145,27 @@ class Action {
 
         console.log(`Version: ${this.version}`)
 
-        this._checkForUpdate()
+        await this._checkForUpdate()
         this._flushOutput()
     }
 }
 
-const files = process.env.INPUT_PROJECT_FILE_PATH
-    .split(/\r\n|\n|\r/)
-    .map(f => f.trim())
-    .filter(f => f.length > 0)
+async function main() {
+    const files = process.env.INPUT_PROJECT_FILE_PATH
+        .split(/\r\n|\n|\r/)
+        .map(f => f.trim())
+        .filter(f => f.length > 0)
 
-for (const file of files) {
-    console.log(`📦 processing ${file}`)
-    new Action(file).run()
+    for (const file of files) {
+        console.log(`📦 processing ${file}`)
+
+        try {
+            const action = new Action(file)
+            await action.run()
+        } catch (e) {
+            console.log(`##[error]😭 ${e}`)
+        }
+    }
 }
+
+main()
