@@ -1,6 +1,7 @@
 const os = require("os"),
     fs = require("fs"),
     path = require("path"),
+    https = require("https"),
     spawnSync = require("child_process").spawnSync
 
 class Action {
@@ -102,7 +103,7 @@ class Action {
             this._tagCommit(version)
     }
 
-    async _checkForUpdate() {
+    _checkForUpdate() {
         if (!this.packageName) {
             this.packageName = path.basename(this.projectFile).split(".").slice(0, -1).join(".")
         }
@@ -112,13 +113,32 @@ class Action {
         let url = `${this.nugetSource}/v3-flatcontainer/${this.packageName.toLowerCase()}/index.json`
         console.log(`Getting versions from ${url}`)
         
-        const response = await fetch(url);
-        const existingVersions = await response.json();
+        return new Promise((resolve, reject) => {
+            https.get(url, res => {
+                let body = ""
+    
+                if (res.statusCode == 404) {
+                    console.log('404 response, assuming new package')
+                    this._pushPackage(this.version, this.packageName)
+                    resolve()
+                } else if (res.statusCode == 200) {
+                    res.setEncoding("utf8")
+                    res.on("data", chunk => body += chunk)
+                    res.on("end", () => {
+                        const existingVersions = JSON.parse(body)
+                        console.log(`Versions retrieved: ${existingVersions.versions}`)
+                        if (existingVersions.versions.indexOf(this.version) < 0)
+                            this._pushPackage(this.version, this.packageName)
 
-        console.log(`Versions retrieved: ${existingVersions.versions}`)
-
-        if (existingVersions.versions.indexOf(this.version) < 0)
-            this._pushPackage(this.version, this.packageName)
+                        resolve()
+                    })
+                } else {
+                    reject(`invalid status code ${res.statusCode}`)
+                }
+            }).on("error", e => {
+                reject(`error retrieving versions: ${e.message}`)
+            })
+        });
     }
 
     async run() {
