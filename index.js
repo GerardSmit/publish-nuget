@@ -1,7 +1,6 @@
 const os = require("os"),
     fs = require("fs"),
     path = require("path"),
-    https = require("https"),
     spawnSync = require("child_process").spawnSync
 
 class Action {
@@ -22,7 +21,6 @@ class Action {
     }
 
     _printErrorAndExit(msg) {
-        console.log(`##[error]😭 ${msg}`)
         throw new Error(msg)
     }
 
@@ -103,7 +101,7 @@ class Action {
             this._tagCommit(version)
     }
 
-    _checkForUpdate() {
+    async _checkForUpdate() {
         // Try to find the package name from the project file
         if (!this.packageName && fs.existsSync(this.projectFile)) {
             const projectFileContent = fs.readFileSync(this.projectFile, { encoding: "utf-8" })
@@ -130,32 +128,32 @@ class Action {
         let url = `${this.nugetSource}/v3-flatcontainer/${this.packageName.toLowerCase()}/index.json`
         console.log(`Getting versions from ${url}`)
         
-        return new Promise((resolve, reject) => {
-            https.get(url, res => {
-                let body = ""
-    
-                if (res.statusCode == 404) {
-                    console.log('404 response, assuming new package')
-                    this._pushPackage(this.version, this.packageName)
-                    resolve()
-                } else if (res.statusCode == 200) {
-                    res.setEncoding("utf8")
-                    res.on("data", chunk => body += chunk)
-                    res.on("end", () => {
-                        const existingVersions = JSON.parse(body)
-                        console.log(`Versions retrieved: ${existingVersions.versions}`)
-                        if (existingVersions.versions.indexOf(this.version) < 0)
-                            this._pushPackage(this.version, this.packageName)
+        const response = await fetch(url);
 
-                        resolve()
-                    })
-                } else {
-                    reject(`invalid status code ${res.statusCode}`)
-                }
-            }).on("error", e => {
-                reject(`error retrieving versions: ${e.message}`)
-            })
-        });
+        if (response.status === 404) {
+            console.log('404 response, assuming new package')
+            this._pushPackage(this.version, this.packageName)
+            return
+        }
+
+        if (!response.ok) {
+            console.log(`##[error]😭 Failed to get the versions from NuGet: ${response.statusText}`)
+            return
+        }
+
+        let existingVersions;
+
+        try {
+            await response.json()
+        } catch (e) {
+            console.log(`##[error]😭 Failed to parse the versions from NuGet: ${e.message}`)
+            return
+        }
+
+        console.log(`Versions retrieved: ${existingVersions.versions}`)
+
+        if (existingVersions.versions.indexOf(this.version) < 0)
+            this._pushPackage(this.version, this.packageName)
     }
 
     async run() {
