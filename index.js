@@ -17,6 +17,18 @@ const noBuild = JSON.parse(process.env.INPUT_NO_BUILD || process.env.NO_BUILD);
 publishAll();
 
 /**
+ * Validate if the value doesn't contain any MSBuild expressions.
+ * @template {string|undefined} T String type
+ * @param {string} name Name of the value
+ * @param {T} value Value to validate
+ */
+function validateNoMsBuildExpression (name, value) {
+  if (value && /\$\(.*\)/.test(value)) {
+    throw new Error(`Cannot use MSBuild expressions in ${name}: ${value}`);
+  }
+  return value;
+}
+/**
  * Get the package name from the project file
  * @param {string} projectFile Project file path
  * @returns {string}
@@ -28,13 +40,13 @@ function getPackageName (projectFile) {
     const packageId = /^\s*<PackageId>(.*)<\/PackageId>\s*$/m.exec(projectFileContent);
 
     if (packageId) {
-      return packageId[1];
+      return validateNoMsBuildExpression('PackageId', packageId[1]);
     }
 
     const assemblyName = /^\s*<AssemblyName>(.*)<\/AssemblyName>\s*$/m.exec(projectFileContent);
 
     if (assemblyName) {
-      return assemblyName[1];
+      return validateNoMsBuildExpression('AssemblyName', assemblyName[1]);
     }
   }
 
@@ -204,7 +216,7 @@ async function publish (projectFile) {
     console.log(`Version Regex: ${versionRegex}`);
 
     const versionFileContent = fs.readFileSync(versionFile, { encoding: 'utf-8' });
-    version = versionRegex.exec(versionFileContent)?.[1];
+    version = validateNoMsBuildExpression('Version', versionRegex.exec(versionFileContent)?.[1]);
   }
 
   if (!version) {

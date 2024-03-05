@@ -25,13 +25,12 @@ jobs:
       # Publish
       - name: publish on version change
         id: publish_nuget
-        uses: alirezanet/publish-nuget@v3.0.0
+        uses: GerardSmit/publish-nuget@v4.0.0
         with:
           # Filepath of the project to be packaged, relative to root of repository
-          PROJECT_FILE_PATH: Core/Core.csproj
-          
-          # NuGet package id, used for version detection & defaults to project name
-          # PACKAGE_NAME: Core
+          PROJECT_FILE_PATH: |
+            src/Project.Abstractions/Project.Abstractions.csproj
+            src/Project/Project.csproj
           
           # Filepath with version info, relative to root of repository & defaults to PROJECT_FILE_PATH
           # VERSION_FILE_PATH: Directory.Build.props
@@ -67,8 +66,7 @@ jobs:
 
 Input | Default Value | Description
 --- | --- | ---
-PROJECT_FILE_PATH | | Filepath of the project to be packaged, relative to root of repository
-PACKAGE_NAME | | NuGet package id, used for version detection & defaults to project name
+PROJECT_FILE_PATH | | Filepaths of the projects to be packaged, relative to root of repository. Must be seperated by newline
 VERSION_FILE_PATH | `[PROJECT_FILE_PATH]` | Filepath with version info, relative to root of repository & defaults to PROJECT_FILE_PATH
 VERSION_REGEX | `^\s*<Version>(.*)<\/Version>\s*$` | Regex pattern to extract version info in a capturing group
 VERSION_STATIC| | Useful with external providers like Nerdbank.GitVersioning, ignores VERSION_FILE_PATH & VERSION_REGEX
@@ -84,15 +82,10 @@ NO_BUILD | `false` | Flag to toggle not building the project and letting pack co
 Output | Description
 --- | ---
 VERSION | Version of the associated git tag
-PACKAGE_NAME | Name of the NuGet package generated
-PACKAGE_PATH | Path to the generated NuGet package
-SYMBOLS_PACKAGE_NAME | Name of the symbols package generated
-SYMBOLS_PACKAGE_PATH | Path to the generated symbols package
 
 **FYI:**
 - Outputs may or may not be set depending on the action inputs or if the action failed
 - `NUGET_SOURCE` must support `/v3-flatcontainer/PACKAGE_NAME/index.json` for version change detection to work
-- Multiple projects can make use of steps to configure each project individually, common inputs between steps can be given as `env` for [job / workflow](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#env)
 
 ## License
 [MIT](LICENSE)
