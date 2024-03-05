@@ -104,6 +104,23 @@ class Action {
     }
 
     _checkForUpdate() {
+        // Try to find the package name from the project file
+        if (!this.packageName && fs.existsSync(this.projectFile)) {
+            const projectFileContent = fs.readFileSync(this.projectFile, { encoding: "utf-8" })
+            const packageId = /^\s*<PackageId>(.*)<\/PackageId>\s*$/m.exec(projectFileContent)
+
+            if (packageId) {
+                this.packageName = packageId[1]
+            } else {
+                const assemblyName = /^\s*<AssemblyName>(.*)<\/AssemblyName>\s*$/m.exec(projectFileContent)
+
+                if (assemblyName) {
+                    this.packageName = assemblyName[1]
+                }
+            }
+        }
+
+        // If we still don't have a package name, use the project file name
         if (!this.packageName) {
             this.packageName = path.basename(this.projectFile).split(".").slice(0, -1).join(".")
         }
