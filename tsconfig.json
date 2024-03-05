@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "lib": ["ES2023"],
+        "module": "node16",
+        "target": "ES2022",
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "strictNullChecks": true,
+        "allowJs": true,
+        "checkJs": true,
+        "outDir": "dist",
+        "downlevelIteration": true
+    }
+}

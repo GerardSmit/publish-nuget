@@ -3,7 +3,7 @@ name: Feature Request
 about: Suggest an idea for this action
 title: "[FEATURE] "
 labels: enhancement
-assignees: brandedoutcast
+assignees: GerardSmit
 
 ---
 
