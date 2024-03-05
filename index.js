@@ -4,6 +4,7 @@ const path = require('path');
 const spawnSync = require('child_process').spawnSync;
 
 const globalVersionFile = process.env.INPUT_VERSION_FILE || process.env.VERSION_FILE;
+const staticVersion = process.env.INPUT_VERSION_STATIC || process.env.VERSION_STATIC;
 const versionRegex = new RegExp(process.env.INPUT_VERSION_REGEX || process.env.VERSION_REGEX, 'm');
 const tagCommit = JSON.parse(process.env.INPUT_TAG_COMMIT || process.env.TAG_COMMIT);
 const tagFormat = process.env.INPUT_TAG_FORMAT || process.env.TAG_FORMAT;
@@ -171,7 +172,7 @@ async function isNewPackageVersion (packageName, version) {
 
   console.log(`Versions retrieved: ${existingVersions.versions}`);
 
-  return existingVersions.versions.includes(version);
+  return !existingVersions.versions.includes(version);
 }
 
 /**
@@ -194,10 +195,17 @@ async function publish (projectFile) {
   }
 
   console.log(`Version Filepath: ${versionFile}`);
-  console.log(`Version Regex: ${versionRegex}`);
 
-  const versionFileContent = fs.readFileSync(versionFile, { encoding: 'utf-8' });
-  const version = versionRegex.exec(versionFileContent)?.[1];
+  let version;
+
+  if (staticVersion) {
+    version = staticVersion;
+  } else {
+    console.log(`Version Regex: ${versionRegex}`);
+
+    const versionFileContent = fs.readFileSync(versionFile, { encoding: 'utf-8' });
+    version = versionRegex.exec(versionFileContent)?.[1];
+  }
 
   if (!version) {
     throw new Error('Version not found');
