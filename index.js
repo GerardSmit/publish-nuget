@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const spawnSync = require('child_process').spawnSync;
 
-const globalVersionFile = process.env.INPUT_VERSION_FILE || process.env.VERSION_FILE;
+const globalVersionFile = process.env.INPUT_VERSION_FILE_PATH || process.env.VERSION_FILE_PATH || process.env.INPUT_VERSION_FILE || process.env.VERSION_FILE;
 const staticVersion = process.env.INPUT_VERSION_STATIC || process.env.VERSION_STATIC;
 const versionRegex = new RegExp(process.env.INPUT_VERSION_REGEX || process.env.VERSION_REGEX, 'm');
 const tagCommit = JSON.parse(process.env.INPUT_TAG_COMMIT || process.env.TAG_COMMIT);
