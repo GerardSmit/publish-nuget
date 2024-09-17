@@ -245,6 +245,7 @@ async function publishAll () {
     .filter(f => f.length > 0);
 
   for (const file of files) {
+    console.log(`::group::${file}`);
     console.log(`📦 Processing ${file}`);
 
     try {
@@ -257,7 +258,7 @@ async function publishAll () {
       console.log(`##[error]😭 ${e}`);
     }
 
-    console.log('');
+    console.log(`::endgroup::`);
   }
 
   // Tag the current commit
