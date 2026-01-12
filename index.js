@@ -137,7 +137,7 @@ function pushPackage (projectFile, version, name) {
   const packages = fs.readdirSync('.').filter(fn => fn.endsWith('nupkg'));
   console.log(`Generated Package(s): ${packages.join(', ')}`);
 
-  const pushCmd = `dotnet nuget push *.nupkg -s ${nugetSource}/v3/index.json -k ${nugetKey} --skip-duplicate${!includeSymbols ? ' -n' : ''}`;
+  const pushCmd = `dotnet nuget push *.nupkg -s ${nugetSource} -k ${nugetKey} --skip-duplicate${!includeSymbols ? ' -n' : ''}`;
   const pushOutput = executeCommand(pushCmd).stdout;
 
   console.log(pushOutput);
@@ -258,7 +258,7 @@ async function publishAll () {
       console.log(`##[error]😭 ${e}`);
     }
 
-    console.log(`::endgroup::`);
+    console.log('::endgroup::');
   }
 
   // Tag the current commit
